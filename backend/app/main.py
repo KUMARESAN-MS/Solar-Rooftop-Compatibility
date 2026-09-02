@@ -56,7 +56,8 @@ from app.routers import solar, analyze
 app.include_router(solar.router, prefix="/api/v1", tags=["Solar Data"])
 app.include_router(analyze.router, prefix="/api/v1", tags=["Analysis"])
 # Routers will be included here as we build each module:
-from app.routers import auth, properties
+from app.routers import auth, properties, analyses
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Auth"])
 app.include_router(properties.router, prefix="/api/v1", tags=["Properties"])
+app.include_router(analyses.router, prefix="/api/v1", tags=["Analyses"])
 # ------------------------------------------------------------------

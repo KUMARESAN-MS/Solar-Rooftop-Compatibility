@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { FiHome, FiSun, FiDollarSign, FiTrendingUp, FiInfo, FiWind } from 'react-icons/fi'
+import { FiHome, FiSun, FiDollarSign, FiTrendingUp, FiInfo, FiWind, FiLoader } from 'react-icons/fi'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, Legend } from 'recharts'
+import { saveProperty, saveAnalysis } from '../services/api'
 
 const TABS = ['Summary', 'Generation', 'Financials', 'Environmental']
 
@@ -10,6 +11,7 @@ export default function ResultsPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('Summary')
+  const [isSaving, setIsSaving] = useState(false)
   
   const result = location.state?.result
   const propertyData = location.state?.propertyData
@@ -19,21 +21,13 @@ export default function ResultsPage() {
     return null
   }
 
-  // Monthly generation mock data for chart (assuming uniform distribution for simplicity, backend gives annual)
-  const monthlyData = [
-    { name: 'Jan', kWh: result.annual_generation_kwh / 12 },
-    { name: 'Feb', kWh: result.annual_generation_kwh / 12 },
-    { name: 'Mar', kWh: (result.annual_generation_kwh / 12) * 1.2 },
-    { name: 'Apr', kWh: (result.annual_generation_kwh / 12) * 1.3 },
-    { name: 'May', kWh: (result.annual_generation_kwh / 12) * 1.5 },
-    { name: 'Jun', kWh: (result.annual_generation_kwh / 12) * 1.6 },
-    { name: 'Jul', kWh: (result.annual_generation_kwh / 12) * 1.6 },
-    { name: 'Aug', kWh: (result.annual_generation_kwh / 12) * 1.5 },
-    { name: 'Sep', kWh: (result.annual_generation_kwh / 12) * 1.3 },
-    { name: 'Oct', kWh: (result.annual_generation_kwh / 12) * 1.1 },
-    { name: 'Nov', kWh: result.annual_generation_kwh / 12 },
-    { name: 'Dec', kWh: (result.annual_generation_kwh / 12) * 0.9 },
-  ]
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const monthlyData = result.monthly_generation_kwh
+    ? result.monthly_generation_kwh.map((kWh, index) => ({
+        name: monthNames[index],
+        kWh: kWh
+      }))
+    : []
 
   // Financial projection data (25 years)
   const financialData = Array.from({ length: 25 }, (_, i) => {
@@ -46,6 +40,52 @@ export default function ResultsPage() {
       breakEven: 0
     }
   })
+
+  const handleSaveAnalysis = async () => {
+    try {
+      setIsSaving(true)
+      
+      const propertyPayload = {
+        name: propertyData.name || 'My Property',
+        latitude: propertyData.latitude,
+        longitude: propertyData.longitude,
+        roof_area_sqm: propertyData.roof_area_sqm,
+        monthly_bill: propertyData.monthly_bill,
+      }
+      
+      const propResponse = await saveProperty(propertyPayload)
+      const newPropertyId = propResponse.data.id
+      
+      const analysisPayload = {
+        property_id: newPropertyId,
+        system_size_kw: result.recommended_system_size_kw,
+        annual_generation_kwh: result.annual_generation_kwh,
+        prediction_source: result.prediction_source || 'physics',
+        gross_cost: result.financials.gross_cost || 0,
+        subsidy: result.financials.subsidy,
+        net_cost: result.financials.net_cost,
+        annual_savings: result.financials.annual_savings,
+        payback_years: result.financials.payback_period_years,
+        co2_saved_tonnes: result.environmental.co2_saved_tonnes,
+        trees_equivalent: result.environmental.equivalent_trees_planted,
+        raw_response: JSON.stringify(result)
+      }
+      
+      await saveAnalysis(analysisPayload)
+      
+      alert('Analysis saved successfully!')
+      navigate('/properties')
+    } catch (error) {
+      console.error('Failed to save analysis:', error)
+      if (error.response?.status === 401) {
+        alert('You must be logged in to save an analysis.')
+      } else {
+        alert(error.response?.data?.detail || 'Failed to save analysis.')
+      }
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   return (
     <div className="min-h-screen p-6 md:p-12" style={{ background: 'var(--color-bg-primary)' }}>
@@ -62,11 +102,13 @@ export default function ResultsPage() {
             View Saved
           </button>
           <button 
-            className="px-6 py-2 rounded-lg font-semibold text-white border-none cursor-pointer"
-            style={{ background: 'var(--gradient-primary)' }}
-            onClick={() => alert("Save functionality requires login, coming soon.")}
+            className="px-6 py-2 rounded-lg font-semibold text-white border-none cursor-pointer flex items-center justify-center gap-2"
+            style={{ background: 'var(--gradient-primary)', opacity: isSaving ? 0.7 : 1 }}
+            onClick={handleSaveAnalysis}
+            disabled={isSaving}
           >
-            Save Analysis
+            {isSaving ? <FiLoader className="animate-spin" /> : null}
+            {isSaving ? 'Saving...' : 'Save Analysis'}
           </button>
         </div>
       </div>

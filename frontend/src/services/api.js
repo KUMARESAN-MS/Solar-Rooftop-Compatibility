@@ -57,4 +57,7 @@ export const saveProperty = (data) => api.post('/properties', data)
 export const updateProperty = (id, data) => api.put(`/properties/${id}`, data)
 export const deleteProperty = (id) => api.delete(`/properties/${id}`)
 
+// --- Analyses (Phase 1) ---
+export const saveAnalysis = (data) => api.post('/analyses', data)
+
 export default api

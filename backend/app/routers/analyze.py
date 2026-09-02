@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from app.schemas.analyze import AnalyzeRequest, AnalyzeResponse, FinancialAnalysis, EnvironmentalAnalysis
 from app.services.irradiance import get_solar_data
-from app.services.physics import calculate_generation
+from app.services.physics import calculate_generation, calculate_monthly_generation
 from app.services.sizing import calculate_system_size
 from app.services.financials import calculate_financials, get_average_tariff
 from app.services.environmental import calculate_co2_savings, calculate_equivalent_trees_planted
@@ -28,6 +28,9 @@ async def analyze_property(request: AnalyzeRequest):
         # 3. Physics-based Generation
         annual_generation = round(calculate_generation(solar_data.annual_ghi, system_size_kw), 2)
         
+        monthly_ghis = [m.ghi for m in solar_data.monthly_data]
+        monthly_generation = [round(g, 2) for g in calculate_monthly_generation(monthly_ghis, system_size_kw)]
+        
         # 6. Financials
         fin_data = calculate_financials(system_size_kw, annual_generation, request.monthly_bill)
         
@@ -40,6 +43,7 @@ async def analyze_property(request: AnalyzeRequest):
             longitude=request.longitude,
             recommended_system_size_kw=system_size_kw,
             annual_generation_kwh=annual_generation,
+            monthly_generation_kwh=monthly_generation,
             financials=FinancialAnalysis(**fin_data),
             environmental=EnvironmentalAnalysis(
                 co2_saved_tonnes=co2_saved,

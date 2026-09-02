@@ -23,6 +23,32 @@ class AnalyzeResponse(BaseModel):
     longitude: float
     recommended_system_size_kw: float
     annual_generation_kwh: float
+    monthly_generation_kwh: list[float]
 
     financials: FinancialAnalysis
     environmental: EnvironmentalAnalysis
+
+class AnalysisCreate(BaseModel):
+    property_id: int
+    system_size_kw: float
+    annual_generation_kwh: float
+    prediction_source: str = "physics"
+    gross_cost: float
+    subsidy: float
+    net_cost: float
+    annual_savings: float
+    payback_years: float
+    co2_saved_tonnes: float
+    trees_equivalent: int
+    raw_response: str = ""
+
+class AnalysisResponseModel(BaseModel):
+    id: int
+    property_id: int
+    system_size_kw: float
+    annual_generation_kwh: float
+    net_cost: float
+    annual_savings: float
+    
+    class Config:
+        from_attributes = True

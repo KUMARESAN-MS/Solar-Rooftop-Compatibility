@@ -9,6 +9,11 @@ def test_analyze_property(mock_get_solar, client):
             self.annual_ghi = 2000.0 # 2000 kWh/m2/yr
             self.avg_temperature = 25.0
             
+            class MockMonthly:
+                def __init__(self, ghi):
+                    self.ghi = ghi
+            self.monthly_data = [MockMonthly(2000.0 / 12) for _ in range(12)]
+            
     mock_get_solar.return_value = MockSolarData()
     
     response = client.post("/api/v1/analyze", json={
@@ -22,6 +27,7 @@ def test_analyze_property(mock_get_solar, client):
     data = response.json()
     assert "recommended_system_size_kw" in data
     assert "annual_generation_kwh" in data
+    assert "monthly_generation_kwh" in data
     
     # Financials shape contract
     assert "financials" in data

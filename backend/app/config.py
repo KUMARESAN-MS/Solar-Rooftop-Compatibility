@@ -16,7 +16,12 @@ ML_MODEL_PATH = BASE_DIR / "app" / "ml" / "model.joblib"
 DATABASE_URL = f"sqlite:///{DB_PATH}"
 
 # --- JWT Auth ---
-SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-change-in-production-abc123xyz")
+ENV = os.getenv("ENV", "development")
+_default_secret = "dev-secret-change-in-production-abc123xyz"
+SECRET_KEY = os.getenv("SECRET_KEY", _default_secret)
+
+if ENV == "production" and SECRET_KEY == _default_secret:
+    raise ValueError("SECRET_KEY environment variable must be set in production!")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
 

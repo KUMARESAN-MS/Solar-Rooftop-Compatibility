@@ -21,25 +21,25 @@ export default function ResultsPage() {
 
   // Monthly generation mock data for chart (assuming uniform distribution for simplicity, backend gives annual)
   const monthlyData = [
-    { name: 'Jan', kWh: result.prediction_source === 'ml' ? result.ml_predicted_kwh / 12 : result.annual_generation_kwh / 12 },
-    { name: 'Feb', kWh: result.prediction_source === 'ml' ? result.ml_predicted_kwh / 12 : result.annual_generation_kwh / 12 },
-    { name: 'Mar', kWh: (result.prediction_source === 'ml' ? result.ml_predicted_kwh / 12 : result.annual_generation_kwh / 12) * 1.2 },
-    { name: 'Apr', kWh: (result.prediction_source === 'ml' ? result.ml_predicted_kwh / 12 : result.annual_generation_kwh / 12) * 1.3 },
-    { name: 'May', kWh: (result.prediction_source === 'ml' ? result.ml_predicted_kwh / 12 : result.annual_generation_kwh / 12) * 1.5 },
-    { name: 'Jun', kWh: (result.prediction_source === 'ml' ? result.ml_predicted_kwh / 12 : result.annual_generation_kwh / 12) * 1.6 },
-    { name: 'Jul', kWh: (result.prediction_source === 'ml' ? result.ml_predicted_kwh / 12 : result.annual_generation_kwh / 12) * 1.6 },
-    { name: 'Aug', kWh: (result.prediction_source === 'ml' ? result.ml_predicted_kwh / 12 : result.annual_generation_kwh / 12) * 1.5 },
-    { name: 'Sep', kWh: (result.prediction_source === 'ml' ? result.ml_predicted_kwh / 12 : result.annual_generation_kwh / 12) * 1.3 },
-    { name: 'Oct', kWh: (result.prediction_source === 'ml' ? result.ml_predicted_kwh / 12 : result.annual_generation_kwh / 12) * 1.1 },
-    { name: 'Nov', kWh: result.prediction_source === 'ml' ? result.ml_predicted_kwh / 12 : result.annual_generation_kwh / 12 },
-    { name: 'Dec', kWh: (result.prediction_source === 'ml' ? result.ml_predicted_kwh / 12 : result.annual_generation_kwh / 12) * 0.9 },
+    { name: 'Jan', kWh: result.annual_generation_kwh / 12 },
+    { name: 'Feb', kWh: result.annual_generation_kwh / 12 },
+    { name: 'Mar', kWh: (result.annual_generation_kwh / 12) * 1.2 },
+    { name: 'Apr', kWh: (result.annual_generation_kwh / 12) * 1.3 },
+    { name: 'May', kWh: (result.annual_generation_kwh / 12) * 1.5 },
+    { name: 'Jun', kWh: (result.annual_generation_kwh / 12) * 1.6 },
+    { name: 'Jul', kWh: (result.annual_generation_kwh / 12) * 1.6 },
+    { name: 'Aug', kWh: (result.annual_generation_kwh / 12) * 1.5 },
+    { name: 'Sep', kWh: (result.annual_generation_kwh / 12) * 1.3 },
+    { name: 'Oct', kWh: (result.annual_generation_kwh / 12) * 1.1 },
+    { name: 'Nov', kWh: result.annual_generation_kwh / 12 },
+    { name: 'Dec', kWh: (result.annual_generation_kwh / 12) * 0.9 },
   ]
 
   // Financial projection data (25 years)
   const financialData = Array.from({ length: 25 }, (_, i) => {
     const year = i + 1
-    const cumulativeSavings = result.annual_savings * year
-    const netCost = result.net_cost
+    const cumulativeSavings = result.financials.annual_savings * year
+    const netCost = result.financials.net_cost
     return {
       year: `Year ${year}`,
       cashFlow: cumulativeSavings - netCost,
@@ -101,7 +101,7 @@ export default function ResultsPage() {
                 <FiSun size={24} />
               </div>
               <h3 className="text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Recommended System</h3>
-              <p className="text-3xl font-bold font-mono">{result.system_size_kw.toFixed(1)} kW</p>
+              <p className="text-3xl font-bold font-mono">{result.recommended_system_size_kw.toFixed(1)} kW</p>
             </div>
             
             <div className="glass-card p-6 flex flex-col items-center text-center">
@@ -109,8 +109,8 @@ export default function ResultsPage() {
                 <FiDollarSign size={24} />
               </div>
               <h3 className="text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Estimated Net Cost</h3>
-              <p className="text-3xl font-bold font-mono">${result.net_cost.toLocaleString()}</p>
-              <p className="text-xs mt-2 text-green-400">After ${result.subsidy.toLocaleString()} subsidy</p>
+              <p className="text-3xl font-bold font-mono">${result.financials.net_cost.toLocaleString()}</p>
+              <p className="text-xs mt-2 text-green-400">After ${result.financials.subsidy.toLocaleString()} subsidy</p>
             </div>
 
             <div className="glass-card p-6 flex flex-col items-center text-center">
@@ -118,19 +118,16 @@ export default function ResultsPage() {
                 <FiTrendingUp size={24} />
               </div>
               <h3 className="text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Payback Period</h3>
-              <p className="text-3xl font-bold font-mono">{result.payback_years.toFixed(1)} yrs</p>
-              <p className="text-xs mt-2 text-orange-400">${result.annual_savings.toLocaleString()} / yr savings</p>
+              <p className="text-3xl font-bold font-mono">{result.financials.payback_period_years.toFixed(1)} yrs</p>
+              <p className="text-xs mt-2 text-orange-400">${result.financials.annual_savings.toLocaleString()} / yr savings</p>
             </div>
 
             <div className="col-span-1 md:col-span-3 glass-card p-6 mt-4">
               <h3 className="flex items-center gap-2 font-semibold mb-4 text-orange-400">
-                <FiInfo /> AI Prediction Insights
+                <FiInfo /> Calculation Insights
               </h3>
               <p className="text-sm leading-relaxed text-gray-300">
-                This analysis used our <strong>{result.prediction_source === 'ml' ? 'Hybrid Machine Learning' : 'Physics-based'}</strong> model. 
-                {result.prediction_source === 'ml' 
-                  ? ` By applying historical performance data, the AI adjusted the base physics estimate from ${result.annual_generation_kwh.toFixed(0)} kWh to a more realistic ${result.ml_predicted_kwh.toFixed(0)} kWh per year.` 
-                  : ' Machine learning prediction was unavailable or opted out, relying purely on PVGIS physics formulas.'}
+                This analysis uses a robust physics-based model powered by PVGIS historical solar irradiance data to calculate generation, rather than relying on experimental ML predictions. 
               </p>
             </div>
           </motion.div>
@@ -189,7 +186,7 @@ export default function ResultsPage() {
                 <FiWind size={32} />
               </div>
               <h3 className="text-xl font-bold mb-2">CO₂ Emissions Saved</h3>
-              <p className="text-4xl font-mono text-blue-400">{result.co2_saved_tonnes.toFixed(1)} Tonnes</p>
+              <p className="text-4xl font-mono text-blue-400">{result.environmental.co2_saved_tonnes.toFixed(1)} Tonnes</p>
               <p className="text-sm mt-4 text-gray-400">Over the 25-year lifespan of the system.</p>
             </div>
 
@@ -198,7 +195,7 @@ export default function ResultsPage() {
                 <FiHome size={32} />
               </div>
               <h3 className="text-xl font-bold mb-2">Equivalent Trees Planted</h3>
-              <p className="text-4xl font-mono text-green-400">{result.trees_equivalent}</p>
+              <p className="text-4xl font-mono text-green-400">{result.environmental.equivalent_trees_planted}</p>
               <p className="text-sm mt-4 text-gray-400">The amount of carbon sequestered by adult trees.</p>
             </div>
           </motion.div>

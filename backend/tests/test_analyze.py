@@ -21,8 +21,19 @@ def test_analyze_property(mock_get_solar, client):
     assert response.status_code == 200
     data = response.json()
     assert "recommended_system_size_kw" in data
+    assert "annual_generation_kwh" in data
+    
+    # Financials shape contract
     assert "financials" in data
+    assert "net_cost" in data["financials"]
+    assert "subsidy" in data["financials"]
+    assert "payback_period_years" in data["financials"]
+    assert "annual_savings" in data["financials"]
+    
+    # Environmental shape contract
     assert "environmental" in data
+    assert "co2_saved_tonnes" in data["environmental"]
+    assert "equivalent_trees_planted" in data["environmental"]
     
     # Roof fits: 50 / 5 = 10 kW
     # Needed: 2000 / 5.50 = 363.6 kWh/mo -> 363.6 / 120 = ~3.03 kW

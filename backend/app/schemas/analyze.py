@@ -23,7 +23,6 @@ class AnalyzeResponse(BaseModel):
     longitude: float
     recommended_system_size_kw: float
     annual_generation_kwh: float
-    ml_predicted_generation_kwh: Optional[float] = Field(None, description="ML model prediction (if available)")
-    prediction_source: str = Field("physics", description="'physics', 'ml', or 'hybrid'")
+
     financials: FinancialAnalysis
     environmental: EnvironmentalAnalysis

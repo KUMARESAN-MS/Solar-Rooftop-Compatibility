@@ -5,7 +5,6 @@ from app.services.physics import calculate_generation
 from app.services.sizing import calculate_system_size
 from app.services.financials import calculate_financials, get_average_tariff
 from app.services.environmental import calculate_co2_savings, calculate_equivalent_trees_planted
-from app.ml.predictor import predict_generation, is_model_available
 
 router = APIRouter()
 
@@ -27,29 +26,7 @@ async def analyze_property(request: AnalyzeRequest):
             raise HTTPException(status_code=400, detail="Roof area too small or no solar potential.")
         
         # 3. Physics-based Generation
-        physics_generation = calculate_generation(solar_data.annual_ghi, system_size_kw)
-        
-        # 4. ML Prediction (optional enhancement)
-        ml_generation = None
-        prediction_source = "physics"
-        
-        if is_model_available():
-            ml_generation = predict_generation(
-                latitude=request.latitude,
-                longitude=request.longitude,
-                roof_area_sqm=request.roof_area_sqm,
-                annual_ghi=solar_data.annual_ghi,
-                avg_temperature=solar_data.avg_temperature,
-                system_size_kw=system_size_kw,
-            )
-        
-        # 5. Choose best estimate
-        if ml_generation is not None:
-            # Hybrid: average of physics and ML for robustness
-            annual_generation = round((physics_generation + ml_generation) / 2, 2)
-            prediction_source = "hybrid"
-        else:
-            annual_generation = round(physics_generation, 2)
+        annual_generation = round(calculate_generation(solar_data.annual_ghi, system_size_kw), 2)
         
         # 6. Financials
         fin_data = calculate_financials(system_size_kw, annual_generation, request.monthly_bill)
@@ -63,8 +40,6 @@ async def analyze_property(request: AnalyzeRequest):
             longitude=request.longitude,
             recommended_system_size_kw=system_size_kw,
             annual_generation_kwh=annual_generation,
-            ml_predicted_generation_kwh=ml_generation,
-            prediction_source=prediction_source,
             financials=FinancialAnalysis(**fin_data),
             environmental=EnvironmentalAnalysis(
                 co2_saved_tonnes=co2_saved,

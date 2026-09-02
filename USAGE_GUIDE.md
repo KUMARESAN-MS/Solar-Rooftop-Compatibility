@@ -74,13 +74,11 @@ FastAPI provides a beautiful, auto-generated UI to test all the endpoints withou
    {
      "latitude": 17.3850,
      "longitude": 78.4867,
-     "building_type": "independent_house",
-     "rooftop_area_sqm": 120,
-     "usable_fraction": 0.6,
-     "monthly_consumption_kwh": 350
+     "roof_area_sqm": 120,
+     "monthly_bill": 2500
    }
    ```
-   *(This represents a house in Hyderabad with a 120 sqm roof where 60% is usable, consuming 350 units a month).*
+   *(This represents a house in Hyderabad with a 120 sqm roof, with a monthly bill of $2500 (or INR 2500)).*
 
 6. Click the large blue **"Execute"** button.
 7. Scroll down slightly to see the **Server response**. You will get a detailed JSON output containing:

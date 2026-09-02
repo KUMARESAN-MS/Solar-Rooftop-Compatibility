@@ -26,6 +26,8 @@ Thumbs.db
 # ML artifacts (large files)
 *.joblib
 !backend/app/ml/model.joblib
+!backend/app/ml/scaler.joblib
+!backend/app/ml/model_metadata.joblib
 
 # Logs
 *.log

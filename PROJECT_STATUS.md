@@ -46,7 +46,7 @@
 - [x] Synthetic dataset generation script (`app/ml/generate_dataset.py` — 5000 samples)
 - [x] Feature engineering + model training script (`app/ml/train_model.py` — GBR, R²=0.9943, MAPE=4.42%)
 - [x] Model export + inference wrapper (`app/ml/predictor.py` — lazy-loaded, graceful fallback)
-- [x] ML integration into analyze endpoint (hybrid physics+ML prediction)
+- [ ] ML integration into analyze endpoint (hybrid physics+ML prediction) - CURRENTLY DISABLED IN CRITICAL PATH
 
 ### Phase 4 — Database + Authentication
 - [x] Database schema (users, properties, analyses)
@@ -65,10 +65,10 @@
 - [x] Summary hero card
 - [x] Generation tab (charts)
 - [x] Financials tab (charts)
-- [x] Comparison tab (table)
+- [ ] Comparison tab (table)
 - [x] Environmental tab
-- [x] Assumptions panel
-- [x] Saved properties grid
+- [ ] Assumptions panel
+- [ ] Saved properties grid (needs wiring to analysis)
 
 ### Phase 7 — Polish, Edge Cases, Testing
 - [ ] Edge case handling

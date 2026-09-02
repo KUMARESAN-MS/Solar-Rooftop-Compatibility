@@ -1,0 +1,61 @@
+{
+  "_meta": {
+    "region": "Telangana / Hyderabad",
+    "last_updated": "2026-08-27",
+    "notes": "YOU MUST verify and update these values with real, cited sources for your report."
+  },
+
+  "electricity_tariff": {
+    "source": "TSSPDCL Tariff Order — UPDATE WITH ACTUAL SOURCE URL AND DATE",
+    "currency": "INR",
+    "unit": "per_kWh",
+    "domestic_slabs": [
+      { "from_kwh": 0,   "to_kwh": 100,  "rate": 1.95,  "note": "Slab 1 — verify" },
+      { "from_kwh": 101, "to_kwh": 200,  "rate": 3.55,  "note": "Slab 2 — verify" },
+      { "from_kwh": 201, "to_kwh": 300,  "rate": 5.50,  "note": "Slab 3 — verify" },
+      { "from_kwh": 301, "to_kwh": 500,  "rate": 7.50,  "note": "Slab 4 — verify" },
+      { "from_kwh": 501, "to_kwh": 99999,"rate": 9.50,  "note": "Slab 5 — verify" }
+    ],
+    "fixed_charges_per_month": 50
+  },
+
+  "solar_install_cost": {
+    "source": "MNRE Benchmark Cost + local installer average — UPDATE WITH ACTUAL SOURCE",
+    "currency": "INR",
+    "cost_per_kw": {
+      "1_to_3_kw": 60000,
+      "3_to_10_kw": 55000,
+      "above_10_kw": 50000
+    },
+    "note": "These are approximate MNRE benchmark costs. Verify for current year."
+  },
+
+  "subsidy": {
+    "source": "PM Surya Ghar Muft Bijli Yojana — UPDATE WITH ACTUAL SOURCE URL",
+    "scheme_name": "PM Surya Ghar Muft Bijli Yojana",
+    "currency": "INR",
+    "subsidy_per_kw": [
+      { "from_kw": 0, "to_kw": 2, "subsidy_per_kw": 30000 },
+      { "from_kw": 2, "to_kw": 3, "subsidy_per_kw": 18000 },
+      { "from_kw": 3, "to_kw": 10, "subsidy_per_kw": 0, "note": "Only for first 3 kW" }
+    ],
+    "max_subsidy": 78000,
+    "eligibility": "Domestic consumers with grid-connected rooftop solar",
+    "note": "Subsidy structure as of 2024. Verify for your submission date."
+  },
+
+  "grid_emission_factor": {
+    "source": "CEA CO2 Baseline Database — UPDATE WITH ACTUAL REPORT AND YEAR",
+    "value_tco2_per_mwh": 0.716,
+    "region": "Southern Grid (India)",
+    "year": 2023,
+    "note": "Verify with latest CEA publication"
+  },
+
+  "net_metering": {
+    "source": "TSERC Net Metering Regulations — UPDATE WITH SOURCE",
+    "feed_in_tariff_per_kwh": 2.44,
+    "banking_period_months": 12,
+    "note": "Applicable for net metering in Telangana. Verify current rate."
+  }
+}

@@ -1,0 +1,31 @@
+# Dependency directories
+node_modules/
+venv/
+__pycache__/
+*.pyc
+
+# Database
+*.db
+
+# Environment
+.env
+.env.local
+
+# Build
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# ML artifacts (large files)
+*.joblib
+!backend/app/ml/model.joblib
+
+# Logs
+*.log

@@ -4,6 +4,15 @@ import { motion } from 'framer-motion'
 import { FiHome, FiSun, FiDollarSign, FiTrendingUp, FiInfo, FiWind, FiLoader } from 'react-icons/fi'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, Legend } from 'recharts'
 import { saveProperty, saveAnalysis } from '../services/api'
+import { formatMoney, formatCurrency } from '../utils/formatCurrency'
+
+// Compact tick formatter for the Y axis (e.g. "₹1.2L" or "$1.2k")
+function formatCurrencyTick(value, currency, locale) {
+  const abs = Math.abs(value)
+  if (abs >= 100000) return formatCurrency(value / 100000, currency, locale).replace(/\.0+$/, '') + 'L'
+  if (abs >= 1000) return formatCurrency(value / 1000, currency, locale).replace(/\.0+$/, '') + 'k'
+  return formatCurrency(value, currency, locale)
+}
 
 const TABS = ['Summary', 'Generation', 'Financials', 'Environmental']
 
@@ -29,11 +38,14 @@ export default function ResultsPage() {
       }))
     : []
 
-  // Financial projection data (25 years)
+  // Locale from the backend (e.g. "en-IN", "en-US")
+  const locale = result.financials?.locale || 'en-US'
+
+  // Financial projection data (25 years) — uses .amount for arithmetic
   const financialData = Array.from({ length: 25 }, (_, i) => {
     const year = i + 1
-    const cumulativeSavings = result.financials.annual_savings * year
-    const netCost = result.financials.net_cost
+    const cumulativeSavings = result.financials.annual_savings.amount * year
+    const netCost = result.financials.net_cost.amount
     return {
       year: `Year ${year}`,
       cashFlow: cumulativeSavings - netCost,
@@ -61,10 +73,10 @@ export default function ResultsPage() {
         system_size_kw: result.recommended_system_size_kw,
         annual_generation_kwh: result.annual_generation_kwh,
         prediction_source: result.prediction_source || 'physics',
-        gross_cost: result.financials.gross_cost || 0,
-        subsidy: result.financials.subsidy,
-        net_cost: result.financials.net_cost,
-        annual_savings: result.financials.annual_savings,
+        gross_cost: result.financials.gross_cost.amount || 0,
+        subsidy: result.financials.subsidy.amount,
+        net_cost: result.financials.net_cost.amount,
+        annual_savings: result.financials.annual_savings.amount,
         payback_years: result.financials.payback_period_years,
         co2_saved_tonnes: result.environmental.co2_saved_tonnes,
         trees_equivalent: result.environmental.equivalent_trees_planted,
@@ -151,8 +163,8 @@ export default function ResultsPage() {
                 <FiDollarSign size={24} />
               </div>
               <h3 className="text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Estimated Net Cost</h3>
-              <p className="text-3xl font-bold font-mono">${result.financials.net_cost.toLocaleString()}</p>
-              <p className="text-xs mt-2 text-green-400">After ${result.financials.subsidy.toLocaleString()} subsidy</p>
+              <p className="text-3xl font-bold font-mono">{formatMoney(result.financials.net_cost, locale)}</p>
+              <p className="text-xs mt-2 text-green-400">After {formatMoney(result.financials.subsidy, locale)} subsidy</p>
             </div>
 
             <div className="glass-card p-6 flex flex-col items-center text-center">
@@ -161,7 +173,7 @@ export default function ResultsPage() {
               </div>
               <h3 className="text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Payback Period</h3>
               <p className="text-3xl font-bold font-mono">{result.financials.payback_period_years.toFixed(1)} yrs</p>
-              <p className="text-xs mt-2 text-orange-400">${result.financials.annual_savings.toLocaleString()} / yr savings</p>
+              <p className="text-xs mt-2 text-orange-400">{formatMoney(result.financials.annual_savings, locale)} / yr savings</p>
             </div>
 
             <div className="col-span-1 md:col-span-3 glass-card p-6 mt-4">
@@ -207,10 +219,10 @@ export default function ResultsPage() {
               <LineChart data={financialData} margin={{ top: 20, right: 30, left: 20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                 <XAxis dataKey="year" stroke="#94A3B8" tick={{fontSize: 12}} interval={4} />
-                <YAxis stroke="#94A3B8" tickFormatter={(value) => `$${value/1000}k`} />
+                <YAxis stroke="#94A3B8" tickFormatter={(value) => formatCurrencyTick(value, result.financials.currency, locale)} />
                 <Tooltip 
                   contentStyle={{ backgroundColor: '#1E293B', border: '1px solid #334155', borderRadius: '8px' }}
-                  formatter={(value) => `$${value.toLocaleString(undefined, {maximumFractionDigits: 0})}`}
+                  formatter={(value) => formatMoney({ amount: value, currency: result.financials.currency }, locale)}
                 />
                 <Legend />
                 <Line type="monotone" dataKey="cashFlow" name="Net Cash Flow" stroke="#22C55E" strokeWidth={3} dot={false} />

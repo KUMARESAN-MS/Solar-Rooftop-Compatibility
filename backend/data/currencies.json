@@ -1,0 +1,23 @@
+{
+  "IN": { "code": "INR", "symbol": "₹", "locale": "en-IN" },
+  "US": { "code": "USD", "symbol": "$", "locale": "en-US" },
+  "GB": { "code": "GBP", "symbol": "£", "locale": "en-GB" },
+  "DE": { "code": "EUR", "symbol": "€", "locale": "de-DE" },
+  "FR": { "code": "EUR", "symbol": "€", "locale": "fr-FR" },
+  "IT": { "code": "EUR", "symbol": "€", "locale": "it-IT" },
+  "ES": { "code": "EUR", "symbol": "€", "locale": "es-ES" },
+  "AU": { "code": "AUD", "symbol": "A$", "locale": "en-AU" },
+  "CA": { "code": "CAD", "symbol": "C$", "locale": "en-CA" },
+  "JP": { "code": "JPY", "symbol": "¥", "locale": "ja-JP" },
+  "CN": { "code": "CNY", "symbol": "¥", "locale": "zh-CN" },
+  "BR": { "code": "BRL", "symbol": "R$", "locale": "pt-BR" },
+  "ZA": { "code": "ZAR", "symbol": "R", "locale": "en-ZA" },
+  "AE": { "code": "AED", "symbol": "د.إ", "locale": "ar-AE" },
+  "SG": { "code": "SGD", "symbol": "S$", "locale": "en-SG" },
+  "KR": { "code": "KRW", "symbol": "₩", "locale": "ko-KR" },
+  "MX": { "code": "MXN", "symbol": "MX$", "locale": "es-MX" },
+  "NG": { "code": "NGN", "symbol": "₦", "locale": "en-NG" },
+  "PK": { "code": "PKR", "symbol": "₨", "locale": "en-PK" },
+  "BD": { "code": "BDT", "symbol": "৳", "locale": "bn-BD" },
+  "DEFAULT": { "code": "USD", "symbol": "$", "locale": "en-US" }
+}

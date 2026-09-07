@@ -1,0 +1,53 @@
+{
+  "_meta": {
+    "country_code": "DEFAULT",
+    "country_name": "Generic / Unknown",
+    "currency": "USD",
+    "last_updated": "2026-09-07",
+    "notes": "Fallback financial assumptions when no country-specific data exists. Based on global averages."
+  },
+
+  "electricity_tariff": {
+    "source": "Global average estimate",
+    "currency": "USD",
+    "unit": "per_kWh",
+    "average_rate": 0.14,
+    "domestic_slabs": [
+      { "from_kwh": 0, "to_kwh": 99999, "rate": 0.14 }
+    ],
+    "fixed_charges_per_month": 10
+  },
+
+  "solar_install_cost": {
+    "source": "Global average estimate (residential)",
+    "currency": "USD",
+    "cost_per_kw": {
+      "1_to_3_kw": 2800,
+      "3_to_10_kw": 2500,
+      "above_10_kw": 2200
+    }
+  },
+
+  "subsidy": {
+    "source": "No subsidy assumed for unknown regions",
+    "scheme_name": "None",
+    "currency": "USD",
+    "subsidy_per_kw": [
+      { "from_kw": 0, "to_kw": 10, "subsidy_per_kw": 0 }
+    ],
+    "max_subsidy": 0
+  },
+
+  "grid_emission_factor": {
+    "source": "Global average",
+    "value_tco2_per_mwh": 0.475,
+    "region": "Global",
+    "year": 2023
+  },
+
+  "net_metering": {
+    "source": "Assumed no feed-in for unknown regions",
+    "feed_in_tariff_per_kwh": 0.0,
+    "banking_period_months": 0
+  }
+}

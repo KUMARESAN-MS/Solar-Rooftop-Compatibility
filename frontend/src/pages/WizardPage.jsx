@@ -7,11 +7,11 @@ export default function WizardPage() {
   const navigate = useNavigate()
   const location = useLocation()
   
-  // Get coordinates from MapPage
-  const { latitude, longitude } = location.state || { latitude: null, longitude: null }
+  // Get coordinates and address from MapPage
+  const { latitude, longitude, address } = location.state || { latitude: null, longitude: null, address: '' }
   
   const [formData, setFormData] = useState({
-    name: 'My Property',
+    name: address || 'My Property',
     roof_area_sqm: 50,
     monthly_bill: 100,
   })

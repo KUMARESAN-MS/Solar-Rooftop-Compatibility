@@ -60,4 +60,8 @@ export const deleteProperty = (id) => api.delete(`/properties/${id}`)
 // --- Analyses (Phase 1) ---
 export const saveAnalysis = (data) => api.post('/analyses', data)
 
+// --- Location (Phase 2) ---
+export const reverseGeocode = (latitude, longitude) => api.post('/location/reverse-geocode', { latitude, longitude })
+export const searchLocation = (query) => api.post('/location/search', { query })
+
 export default api

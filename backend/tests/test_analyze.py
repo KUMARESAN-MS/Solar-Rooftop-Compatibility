@@ -1,47 +1,64 @@
 import pytest
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock
+
 
 @patch("app.routers.analyze.get_solar_data")
-def test_analyze_property(mock_get_solar, client):
-    # Mock the return value of get_solar_data
+@patch("app.routers.analyze._resolve_country_code", new_callable=AsyncMock)
+def test_analyze_property(mock_country, mock_get_solar, client):
+    """
+    CONTRACT TEST: validates the exact shape of AnalyzeResponse that the frontend relies on.
+    Any change here that breaks this test signals a frontend contract violation.
+    """
+    mock_country.return_value = "IN"
+
+    class MockMonthly:
+        def __init__(self, ghi):
+            self.ghi = ghi
+
     class MockSolarData:
-        def __init__(self):
-            self.annual_ghi = 2000.0 # 2000 kWh/m2/yr
-            self.avg_temperature = 25.0
-            
-            class MockMonthly:
-                def __init__(self, ghi):
-                    self.ghi = ghi
-            self.monthly_data = [MockMonthly(2000.0 / 12) for _ in range(12)]
-            
+        annual_ghi = 2000.0
+        avg_temperature = 25.0
+        monthly_data = [MockMonthly(2000.0 / 12) for _ in range(12)]
+
     mock_get_solar.return_value = MockSolarData()
-    
+
     response = client.post("/api/v1/analyze", json={
         "latitude": 17.38,
         "longitude": 78.48,
         "roof_area_sqm": 50.0,
-        "monthly_bill": 2000.0
+        "monthly_bill": 2000.0,
     })
-    
-    assert response.status_code == 200
+
+    assert response.status_code == 200, response.text
     data = response.json()
+
+    # Top-level shape
     assert "recommended_system_size_kw" in data
     assert "annual_generation_kwh" in data
     assert "monthly_generation_kwh" in data
-    
-    # Financials shape contract
+    assert isinstance(data["monthly_generation_kwh"], list)
+    assert len(data["monthly_generation_kwh"]) == 12
+
+    # Financials — NEW shape: each money field is {amount, currency}
+    fin = data["financials"]
     assert "financials" in data
-    assert "net_cost" in data["financials"]
-    assert "subsidy" in data["financials"]
-    assert "payback_period_years" in data["financials"]
-    assert "annual_savings" in data["financials"]
-    
-    # Environmental shape contract
+
+    for money_field in ("gross_cost", "subsidy", "net_cost", "annual_savings"):
+        assert money_field in fin, f"Missing financials.{money_field}"
+        assert "amount" in fin[money_field], f"financials.{money_field} missing .amount"
+        assert "currency" in fin[money_field], f"financials.{money_field} missing .currency"
+        assert isinstance(fin[money_field]["amount"], (int, float))
+        assert isinstance(fin[money_field]["currency"], str)
+
+    assert "payback_period_years" in fin
+    assert isinstance(fin["payback_period_years"], (int, float))
+    assert "currency" in fin   # top-level currency code for the block
+    assert "locale" in fin     # BCP-47 locale for Intl.NumberFormat
+
+    # Environmental shape
     assert "environmental" in data
     assert "co2_saved_tonnes" in data["environmental"]
     assert "equivalent_trees_planted" in data["environmental"]
-    
-    # Roof fits: 50 / 5 = 10 kW
-    # Needed: 2000 / 5.50 = 363.6 kWh/mo -> 363.6 / 120 = ~3.03 kW
-    # Recommended should be ~3.03 kW
+
+    # Sanity check on sizing logic
     assert data["recommended_system_size_kw"] > 0

@@ -61,14 +61,16 @@
 - [x] Processing/loading screen
 - [x] API integration
 
-### Phase 6 — Frontend: Results Dashboard
-- [x] Summary hero card
-- [x] Generation tab (charts)
-- [x] Financials tab (charts)
-- [ ] Comparison tab (table)
-- [x] Environmental tab
-- [ ] Assumptions panel
-- [ ] Saved properties grid (needs wiring to analysis)
+### Phase 6 — Frontend: Results Dashboard & UX Polish
+- [x] Summary hero card (panel count, roof footprint %, plain-language savings)
+- [x] Generation tab (charts & monthly insolation)
+- [x] Financials tab (costs, payback, 25-year cumulative cash flow)
+- [x] Environmental tab (CO₂ offset, tree equivalents)
+- [x] What-If Simulator (interactive capacity slider with real-time recalculation)
+- [x] Reality Check module (shading, roof mounting, net metering, degradation)
+- [x] Roof area presets & map draw integration
+- [x] Component extraction (LocationPicker, RoofAreaSelector, CurrencyDisplay, Navbar, LoadingStates)
+- [x] Saved properties & analysis persistence wiring
 
 ### Phase 7 — Polish, Edge Cases, Testing
 - [ ] Edge case handling

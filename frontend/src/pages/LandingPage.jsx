@@ -1,203 +1,147 @@
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
-import { checkHealth } from '../services/api'
-import { FiSun, FiCpu, FiDollarSign, FiArrowRight } from 'react-icons/fi'
+import { FiArrowRight, FiSun, FiMapPin, FiShield, FiTrendingUp } from 'react-icons/fi'
+import Navbar from '../components/Navbar'
 
 const features = [
   {
-    icon: <FiSun size={28} />,
-    title: 'Location-Aware',
-    description: 'Real solar irradiance data for your exact coordinates, pulled from global satellite databases.',
+    icon: <FiMapPin size={20} />,
+    title: 'Location-Specific Irradiance',
+    description: 'Direct integration with global satellite climate databases (PVGIS / NASA POWER) for accurate solar radiation.',
   },
   {
-    icon: <FiCpu size={28} />,
-    title: 'AI-Powered',
-    description: 'Physics-based calculations refined by machine learning for more accurate generation estimates.',
+    icon: <FiSun size={20} />,
+    title: 'Physics-Based Generation',
+    description: 'Hourly insolation angles, panel temperature coefficients, and system losses computed down to the kilowatt-hour.',
   },
   {
-    icon: <FiDollarSign size={28} />,
-    title: 'Transparent Results',
-    description: 'Clear financials with cited assumptions — see exactly how every number was calculated.',
+    icon: <FiTrendingUp size={20} />,
+    title: 'Clear Financial Modeling',
+    description: 'Realistic 25-year cash flows with domestic tariff slabs, state subsidies, and transparent net metering assumptions.',
   },
 ]
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: (i = 0) => ({
-    opacity: 1,
-    y: 0,
-    transition: { delay: i * 0.15, duration: 0.6, ease: 'easeOut' },
-  }),
-}
-
 export default function LandingPage() {
   const navigate = useNavigate()
-  const [backendStatus, setBackendStatus] = useState(null)
-
-  useEffect(() => {
-    checkHealth()
-      .then(() => setBackendStatus('connected'))
-      .catch(() => setBackendStatus('offline'))
-  }, [])
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'var(--gradient-hero)' }}>
-      {/* Ambient background orbs */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div
-          className="absolute w-[600px] h-[600px] rounded-full opacity-20 blur-[120px]"
-          style={{ background: 'var(--color-primary-500)', top: '-10%', right: '-10%' }}
-        />
-        <div
-          className="absolute w-[400px] h-[400px] rounded-full opacity-15 blur-[100px]"
-          style={{ background: 'var(--color-accent-500)', bottom: '-5%', left: '-5%' }}
-        />
-      </div>
+    <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ backgroundColor: 'var(--surface-bg)' }}>
+      <Navbar />
 
-      {/* Navigation */}
-      <motion.nav
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="relative z-10 flex items-center justify-between px-6 md:px-12 py-5"
-      >
-        <div className="flex items-center gap-2">
-          <div
-            className="w-9 h-9 rounded-lg flex items-center justify-center"
-            style={{ background: 'var(--gradient-primary)' }}
-          >
-            <FiSun className="text-white" size={20} />
-          </div>
-          <span className="text-xl font-bold" style={{ fontFamily: 'var(--font-display)' }}>
-            Solar<span className="gradient-text">Predict</span>
-          </span>
-        </div>
-        <div className="flex items-center gap-4">
-          {backendStatus && (
-            <span
-              className="text-xs px-3 py-1 rounded-full flex items-center gap-1.5"
-              style={{
-                background: backendStatus === 'connected'
-                  ? 'rgba(34, 197, 94, 0.15)'
-                  : 'rgba(239, 68, 68, 0.15)',
-                color: backendStatus === 'connected'
-                  ? 'var(--color-success-400)'
-                  : '#EF4444',
-              }}
-            >
-              <span
-                className="w-1.5 h-1.5 rounded-full"
-                style={{
-                  background: backendStatus === 'connected'
-                    ? 'var(--color-success-400)'
-                    : '#EF4444',
-                }}
-              />
-              API {backendStatus === 'connected' ? 'Connected' : 'Offline'}
-            </span>
-          )}
-        </div>
-      </motion.nav>
+      {/* Subtle background radial ambient glow — restrained & elegant */}
+      <div
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[480px] pointer-events-none opacity-40 dark:opacity-25 blur-3xl"
+        style={{
+          background: 'radial-gradient(circle at 50% 30%, rgba(217, 119, 6, 0.15) 0%, rgba(217, 119, 6, 0) 70%)',
+        }}
+      />
 
-      {/* Hero Section */}
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 text-center">
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          className="max-w-3xl mx-auto"
-        >
-          {/* Badge */}
+      {/* Hero Section — Real Full Page Container */}
+      <main className="flex-1 w-full">
+        <section className="app-container pt-16 sm:pt-20 pb-16 text-center flex flex-col items-center">
+          {/* Subtle pill tag */}
           <motion.div
-            variants={fadeUp}
-            custom={0}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm mb-8"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium mb-6"
             style={{
-              background: 'rgba(249, 115, 22, 0.1)',
-              border: '1px solid rgba(249, 115, 22, 0.25)',
-              color: 'var(--color-primary-400)',
+              backgroundColor: 'var(--accent-surface)',
+              color: 'var(--accent-primary)',
             }}
           >
-            <FiSun size={14} />
-            AI-Powered Solar Analysis
+            <FiShield size={14} />
+            Satellite Climate Data & Physics Engine
           </motion.div>
 
-          {/* Headline */}
+          {/* Hero Headline */}
           <motion.h1
-            variants={fadeUp}
-            custom={1}
-            className="text-4xl md:text-6xl lg:text-7xl font-extrabold leading-tight mb-6"
-            style={{ fontFamily: 'var(--font-display)' }}
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6 max-w-4xl"
+            style={{ color: 'var(--text-primary)', lineHeight: 1.12 }}
           >
-            Is solar{' '}
-            <span className="gradient-text">worth it</span>
-            <br />
-            for your roof?
+            Is solar worth it <br className="hidden sm:inline" />
+            for your rooftop?
           </motion.h1>
 
           {/* Subtitle */}
           <motion.p
-            variants={fadeUp}
-            custom={2}
-            className="text-lg md:text-xl max-w-xl mx-auto mb-10"
-            style={{ color: 'var(--color-text-secondary)' }}
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
+            className="text-base sm:text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed"
+            style={{ color: 'var(--text-secondary)' }}
           >
-            Drop a pin. Answer 3 questions. Get a complete solar analysis —
-            system size, savings, payback period, and environmental impact —
-            powered by real data and AI.
+            Drop a pin on your building. Answer three quick questions. Receive an unbiased rooftop feasibility report — system size, true cost, bill offset, and payback period.
           </motion.p>
 
-          {/* CTA Button */}
-          <motion.button
-            variants={fadeUp}
-            custom={3}
-            whileHover={{ scale: 1.05, boxShadow: '0 0 40px rgba(249, 115, 22, 0.35)' }}
-            whileTap={{ scale: 0.97 }}
-            onClick={() => navigate('/map')}
-            className="inline-flex items-center gap-3 px-8 py-4 rounded-full text-white font-semibold text-lg cursor-pointer border-none"
-            style={{ background: 'var(--gradient-primary)' }}
-            id="cta-analyze"
+          {/* Primary Action Button */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.3 }}
+            className="mb-16"
           >
-            Analyze Your Roof
-            <FiArrowRight size={20} />
-          </motion.button>
-        </motion.div>
-
-        {/* Feature Cards */}
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto mt-20 mb-12 w-full"
-        >
-          {features.map((feature, i) => (
-            <motion.div
-              key={feature.title}
-              variants={fadeUp}
-              custom={i + 4}
-              className="glass-card p-6 text-left"
-              whileHover={{ y: -4, borderColor: 'rgba(249, 115, 22, 0.3)' }}
+            <button
+              onClick={() => navigate('/map')}
+              className="btn-primary text-base py-3.5 px-8 rounded-full shadow-lg"
+              id="cta-analyze"
             >
+              Analyze Your Roof
+              <FiArrowRight size={18} />
+            </button>
+          </motion.div>
+
+          {/* 3 Balanced Feature Cards Grid */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="w-full grid grid-cols-1 md:grid-cols-3 gap-6 text-left"
+          >
+            {features.map((feature) => (
               <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
-                style={{ background: 'rgba(249, 115, 22, 0.12)', color: 'var(--color-primary-400)' }}
+                key={feature.title}
+                className="surface-card flex flex-col justify-start"
               >
-                {feature.icon}
+                <div
+                  className="w-11 h-11 rounded-xl flex items-center justify-center mb-5"
+                  style={{
+                    backgroundColor: 'var(--surface-subtle)',
+                    color: 'var(--accent-primary)',
+                  }}
+                >
+                  {feature.icon}
+                </div>
+                <h3
+                  className="text-base font-bold tracking-tight mb-2"
+                  style={{ color: 'var(--text-primary)' }}
+                >
+                  {feature.title}
+                </h3>
+                <p
+                  className="text-sm leading-relaxed"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
+                  {feature.description}
+                </p>
               </div>
-              <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
-              <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-                {feature.description}
-              </p>
-            </motion.div>
-          ))}
-        </motion.div>
+            ))}
+          </motion.div>
+        </section>
       </main>
 
       {/* Footer */}
       <footer
-        className="relative z-10 text-center py-6 text-sm"
-        style={{ color: 'var(--color-text-muted)' }}
+        className="py-8 text-center text-xs border-t"
+        style={{
+          borderColor: 'var(--border-subtle)',
+          color: 'var(--text-muted)',
+        }}
       >
-        Solar Rooftop Prediction System — Academic Project
+        SolarPredict Rooftop Feasibility Analysis System • Academic Research Project
       </footer>
     </div>
   )

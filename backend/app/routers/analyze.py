@@ -47,7 +47,12 @@ async def analyze_property(request: AnalyzeRequest):
         # 3. System sizing (needs tariff for demand-side calculation)
         country_data = load_country_data(country_code)
         tariff_rate = get_average_tariff(country_data)
-        system_size_kw = calculate_system_size(request.roof_area_sqm, request.monthly_bill, tariff_rate)
+        system_size_kw = calculate_system_size(
+            request.roof_area_sqm,
+            request.monthly_bill,
+            tariff_rate,
+            annual_ghi=solar_data.annual_ghi,
+        )
 
         if system_size_kw <= 0:
             raise HTTPException(status_code=400, detail="Roof area too small or no solar potential.")

@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { FiPlus, FiLogOut, FiHome, FiMapPin, FiTrash2 } from 'react-icons/fi'
+import { FiPlus, FiTrash2, FiMapPin, FiLayers } from 'react-icons/fi'
 import { getProperties, deleteProperty } from '../services/api'
+import Navbar from '../components/Navbar'
+import { SkeletonCard } from '../components/LoadingStates'
 
 export default function PropertiesPage() {
   const navigate = useNavigate()
@@ -17,12 +18,12 @@ export default function PropertiesPage() {
     try {
       setLoading(true)
       const res = await getProperties()
-      setProperties(res.data)
+      setProperties(res.data || [])
     } catch (err) {
       if (err.response?.status === 401) {
         navigate('/login')
       } else {
-        console.error("Failed to fetch properties", err)
+        console.error('Failed to fetch properties', err)
       }
     } finally {
       setLoading(false)
@@ -31,113 +32,100 @@ export default function PropertiesPage() {
 
   const handleDelete = async (id, e) => {
     e.stopPropagation()
-    if (!window.confirm("Are you sure you want to delete this property?")) return
-    
+    if (!window.confirm('Are you sure you want to delete this property?')) return
+
     try {
       await deleteProperty(id)
       setProperties(prev => prev.filter(p => p.id !== id))
     } catch (err) {
-      console.error("Failed to delete property", err)
-      alert("Failed to delete property.")
+      console.error('Failed to delete property', err)
+      alert('Failed to delete property.')
     }
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem('solar_token')
-    navigate('/login')
-  }
-
   return (
-    <div className="min-h-screen p-6 md:p-12" style={{ background: 'var(--color-bg-primary)' }}>
-      <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between mb-12">
-        <div>
-          <h1 className="text-3xl font-bold mb-2" style={{ fontFamily: 'var(--font-display)' }}>My Dashboard</h1>
-          <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-            Manage your saved properties and solar analyses.
-          </p>
-        </div>
-        <div className="mt-4 md:mt-0 flex gap-4">
-          <button 
-            onClick={handleLogout} 
-            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-700 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30 transition-colors bg-transparent text-gray-300 cursor-pointer"
-          >
-            <FiLogOut /> Logout
-          </button>
-          <button 
-            className="flex items-center gap-2 px-6 py-2 rounded-lg font-semibold text-white border-none cursor-pointer"
-            style={{ background: 'var(--gradient-primary)' }}
-            onClick={() => navigate('/map')}
-          >
-            <FiPlus /> New Analysis
-          </button>
-        </div>
-      </div>
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--surface-bg)' }}>
+      <Navbar />
 
-      <main className="max-w-5xl mx-auto">
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {/* Top Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+              Saved Properties
+            </h1>
+            <p className="text-xs sm:text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+              Previously evaluated rooftops and solar feasibility records.
+            </p>
+          </div>
+
+          <button
+            onClick={() => navigate('/map')}
+            className="btn-primary py-2 px-4 text-xs sm:text-sm"
+          >
+            <FiPlus size={14} /> Add New Roof
+          </button>
+        </div>
+
+        {/* Content */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="glass-card p-6 h-48 skeleton"></div>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
           </div>
         ) : properties.length === 0 ? (
-          <div className="glass-card p-12 text-center flex flex-col items-center">
-            <div className="w-16 h-16 rounded-full mb-4 flex items-center justify-center bg-gray-800 text-gray-400">
-              <FiHome size={28} />
-            </div>
-            <h3 className="text-xl font-bold mb-2">No properties yet</h3>
-            <p className="text-gray-400 mb-6 max-w-md">
-              You haven't run any solar analyses yet. Drop a pin on the map to get started.
+          <div className="surface-card p-12 text-center max-w-md mx-auto space-y-4">
+            <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+              No saved properties yet.
             </p>
-            <button 
+            <button
               onClick={() => navigate('/map')}
-              className="px-6 py-3 rounded-full font-semibold text-white border-none cursor-pointer"
-              style={{ background: 'var(--gradient-primary)' }}
+              className="btn-primary py-2 px-5 text-xs sm:text-sm"
             >
-              Analyze Your Roof
+              Analyze Your First Rooftop
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {properties.map(property => (
-              <motion.div
-                key={property.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="glass-card p-6 flex flex-col relative group cursor-pointer"
-                onClick={() => alert('Viewing historical analyses is not yet fully implemented in the UI.')}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {properties.map((prop) => (
+              <div
+                key={prop.id}
+                onClick={() => navigate('/wizard', { state: { latitude: prop.latitude, longitude: prop.longitude, address: prop.name } })}
+                className="surface-card p-6 cursor-pointer surface-card-hover flex flex-col justify-between"
               >
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'rgba(249, 115, 22, 0.1)', color: 'var(--color-primary-400)' }}>
-                      <FiHome size={20} />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-lg">{property.name}</h3>
-                      <p className="text-xs text-gray-400 flex items-center gap-1">
-                        <FiMapPin size={10} /> {property.latitude.toFixed(2)}, {property.longitude.toFixed(2)}
-                      </p>
-                    </div>
+                <div>
+                  <div className="flex items-start justify-between mb-2">
+                    <h3 className="text-base font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+                      {prop.name}
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={(e) => handleDelete(prop.id, e)}
+                      className="p-1 rounded text-gray-400 hover:text-red-500 bg-transparent border-none cursor-pointer transition-colors"
+                      title="Delete property"
+                    >
+                      <FiTrash2 size={14} />
+                    </button>
                   </div>
-                  <button 
-                    onClick={(e) => handleDelete(property.id, e)}
-                    className="text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity bg-transparent border-none cursor-pointer p-2"
-                  >
-                    <FiTrash2 />
-                  </button>
+
+                  <p className="text-xs flex items-center gap-1 mb-4" style={{ color: 'var(--text-muted)' }}>
+                    <FiMapPin size={12} />
+                    {prop.latitude.toFixed(4)}°, {prop.longitude.toFixed(4)}°
+                  </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mt-auto pt-4 border-t" style={{ borderColor: 'var(--color-border)' }}>
+                <div className="grid grid-cols-2 gap-2 pt-3 border-t text-xs" style={{ borderColor: 'var(--border-subtle)' }}>
                   <div>
-                    <p className="text-xs text-gray-500">Roof Area</p>
-                    <p className="font-mono">{property.roof_area_sqm} m²</p>
+                    <span className="block text-[11px]" style={{ color: 'var(--text-muted)' }}>Roof Area</span>
+                    <span className="font-semibold font-mono" style={{ color: 'var(--text-primary)' }}>{prop.roof_area_sqm} m²</span>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Current Bill</p>
-                    <p className="font-mono">${property.monthly_bill}/mo</p>
+                    <span className="block text-[11px]" style={{ color: 'var(--text-muted)' }}>Monthly Bill</span>
+                    <span className="font-semibold font-mono" style={{ color: 'var(--text-primary)' }}>${prop.monthly_bill}</span>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
         )}

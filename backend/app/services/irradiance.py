@@ -60,40 +60,52 @@ async def fetch_nasa_power_data(lat: float, lon: float) -> dict | None:
         return None
 
 def process_pvgis_data(lat: float, lon: float, raw_data: dict) -> SolarDataResponse:
-    """Extract required fields from PVGIS JSON response."""
-    # PVGIS returns monthly data in 'outputs' -> 'monthly'
-    # H(h_m): Irradiation on horizontal plane (kWh/m2/mo)
+    """Extract required fields from PVGIS JSON response, aggregating multi-year data into 12 calendar months."""
+    # PVGIS returns monthly data across multiple years (e.g. 2005-2020 = 192 rows) in 'outputs' -> 'monthly'
+    # H(h_m) or H(h)_m: Irradiation on horizontal plane (kWh/m2/mo)
     # T2m: 2m temperature (°C)
     
     monthly_list = raw_data.get("outputs", {}).get("monthly", [])
     
+    # Bucket by calendar month 1..12 to compute multi-year climatological average
+    month_buckets = {m: {"ghi_list": [], "temp_list": []} for m in range(1, 13)}
+    
+    for m in monthly_list:
+        month_num = m.get("month")
+        if month_num in month_buckets:
+            ghi = m.get("H(h_m)")
+            if ghi is None:
+                ghi = m.get("H(h)_m", 0.0)
+            temp = m.get("T2m", 25.0)
+            month_buckets[month_num]["ghi_list"].append(float(ghi))
+            month_buckets[month_num]["temp_list"].append(float(temp))
+            
     monthly_data = []
     annual_ghi = 0.0
     total_temp = 0.0
     
-    # Typically 12 months are returned
-    for m in monthly_list:
-        month_num = m.get("month")
-        ghi = m.get("H(h_m)", 0.0)
-        temp = m.get("T2m", 25.0)
+    for month_num in range(1, 13):
+        b = month_buckets[month_num]
+        avg_ghi = round(sum(b["ghi_list"]) / len(b["ghi_list"]), 2) if b["ghi_list"] else 0.0
+        avg_temp = round(sum(b["temp_list"]) / len(b["temp_list"]), 2) if b["temp_list"] else 25.0
         
         monthly_data.append(MonthlySolarData(
             month=month_num,
-            ghi=ghi,
-            dni=0.0, # PVGIS MRcalc might not return DNI unless requested, we rely on GHI
-            temperature=temp
+            ghi=avg_ghi,
+            dni=0.0,
+            temperature=avg_temp
         ))
+        annual_ghi += avg_ghi
+        total_temp += avg_temp
         
-        annual_ghi += ghi
-        total_temp += temp
-        
-    avg_temp = total_temp / max(1, len(monthly_data))
+    overall_avg_temp = round(total_temp / 12.0, 2)
+    annual_ghi = round(annual_ghi, 2)
     
     return SolarDataResponse(
         latitude=lat,
         longitude=lon,
         annual_ghi=annual_ghi,
-        avg_temperature=avg_temp,
+        avg_temperature=overall_avg_temp,
         monthly_data=monthly_data,
         source="PVGIS"
     )

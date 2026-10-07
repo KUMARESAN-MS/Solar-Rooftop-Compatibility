@@ -10,8 +10,9 @@ export default function WhatIfSimulator({
   currency = 'USD',
 }) {
   const recommendedKw = originalResult?.recommended_system_size_kw || 3.0
-  const maxRoofCapacityKw = Math.max(1.0, Math.floor((roofAreaSqm / 5.0) * 10) / 10)
-  const sliderMax = Math.max(10.0, Math.min(25.0, maxRoofCapacityKw))
+  // Realistic roof limit: 65% usable rooftop area (5.0 m² panel footprint per kW)
+  const maxRoofCapacityKw = Math.max(1.0, Math.floor(((roofAreaSqm * 0.65) / 5.0) * 10) / 10)
+  const sliderMax = Math.max(recommendedKw, maxRoofCapacityKw)
 
   const [currentKw, setCurrentKw] = useState(recommendedKw)
 

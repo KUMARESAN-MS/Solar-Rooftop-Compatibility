@@ -71,13 +71,21 @@ export default function WizardPage() {
     setFormData((prev) => ({ ...prev, monthly_bill: val }))
   }
 
-  // Live calculated preliminary estimations
-  const estPanels = Math.max(4, Math.ceil((formData.roof_area_sqm * 0.65) / 2.0))
-  const estKw = ((estPanels * 400) / 1000).toFixed(1)
-  const estMonthlyGen = Math.round(estKw * 125)
+  // Live calculated preliminary estimations using the same sizing logic as the backend:
+  // min(roof capacity limit, energy demand needed)
   const estTariff = getEstimatedTariffForCurrency(currencyCode)
+  // 1. Max size that fits on the usable roof (65% realistic usable coverage, 5.0 sqm/kW)
+  const maxKwRoof = Math.max(1.0, (formData.roof_area_sqm * 0.65) / 5.0)
+  // 2. Size needed to offset electricity consumption
+  const targetMonthlyKwh = formData.monthly_bill / Math.max(0.01, estTariff)
+  const neededKw = targetMonthlyKwh / 125.0 // ~125 kWh/mo per kW
+  // Sizing: min(roof limit, demand), at least 1.0 kW if roof permits
+  const recommendedKw = Math.min(maxKwRoof, Math.max(1.0, neededKw))
+  const estPanels = Math.max(3, Math.ceil((recommendedKw * 1000) / 400))
+  const estKw = ((estPanels * 400) / 1000).toFixed(1)
+  const estMonthlyGen = Math.round(Number(estKw) * 125)
   const estMonthlySavings = Math.min(formData.monthly_bill, Math.round(estMonthlyGen * estTariff))
-  const billOffsetPercent = Math.min(100, Math.round((estMonthlySavings / (formData.monthly_bill || 1)) * 100))
+  const billOffsetPercent = Math.min(100, Math.round((estMonthlyGen / Math.max(1, targetMonthlyKwh)) * 100))
   const estFirstYearSavings = Math.round(estMonthlySavings * 12)
 
   const handleSubmit = (e) => {

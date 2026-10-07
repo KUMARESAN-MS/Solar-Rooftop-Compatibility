@@ -37,7 +37,7 @@ import WhatIfSimulator from '../components/WhatIfSimulator'
 import RealityCheck from '../components/RealityCheck'
 import { saveProperty, saveAnalysis } from '../services/api'
 import { formatCurrency } from '../utils/formatCurrency'
-import { getCurrencyInfoByCode, getCurrencySymbol } from '../utils/currencyMapping'
+import { getCurrencyInfoByCode, getCurrencySymbol, getEstimatedTariffForCurrency } from '../utils/currencyMapping'
 import { useTheme } from '../context/ThemeContext'
 
 const TABS = [
@@ -151,20 +151,47 @@ export default function ResultsPage() {
   })
   const netLifetime25YrProfit = Math.max(0, cumulative25YearSavings - netCostVal)
   const lifetimeRoiMultiple = netCostVal > 0 ? (cumulative25YearSavings / netCostVal).toFixed(1) : '4.5'
-  const lifetimeSolarKwh = annualGenKwh * 25 * 0.93 // with 0.5% degradation
+  // 25-Year degraded cumulative solar generation (compounding 0.5%/yr degradation)
+  let lifetimeSolarKwh = 0
+  for (let yr = 0; yr < 25; yr++) {
+    lifetimeSolarKwh += annualGenKwh * Math.pow(1 - 0.005, yr)
+  }
+  lifetimeSolarKwh = Math.round(lifetimeSolarKwh)
+  const degradationFactor = annualGenKwh > 0 ? (lifetimeSolarKwh / annualGenKwh) : 23.556
+
   const levelizedCostOfEnergy = lifetimeSolarKwh > 0 ? (netCostVal / lifetimeSolarKwh).toFixed(3) : '0.042'
   const estimatedGridTariffPerKwh = ((monthlyBill * 12) / Math.max(1, (annualGenKwh * (billOffsetPercent / 100)))).toFixed(3)
   const estimatedIRR = (Math.max(10, Math.min(28, (annualSavingsVal / Math.max(1, netCostVal)) * 100 - 1.5))).toFixed(1)
 
-  // Eco Impact Detailed Analytics
-  const co2Tonnes = result.environmental?.co2_saved_tonnes || 0
-  const treesPlanted = result.environmental?.equivalent_trees_planted || 0
-  // 1 passenger car emits ~400g CO2/mile -> 1 Tonne = 2,500 miles
-  const passengerMilesOffset = Math.round(co2Tonnes * 2500)
+  // Array actual capacity vs nominal target
+  const arrayActualKw = ((totalPanelsCount * 400) / 1000).toFixed(1)
+
+  // Energy consumption estimation & seasonal surplus calculations
+  const estTariffRate = getEstimatedTariffForCurrency(currency)
+  const estMonthlyConsumption = Math.round(monthlyBill / Math.max(0.01, estTariffRate))
+  const peakMonthlyDifferenceKwh = peakMonth.kWh - estMonthlyConsumption
+  const peakSurplusPercent = estMonthlyConsumption > 0
+    ? Math.round((peakMonthlyDifferenceKwh / estMonthlyConsumption) * 100)
+    : 0
+
+  // Eco Impact Detailed Analytics (Annual rates + 25-Year degraded totals)
+  const co2TonnesAnnual = result.environmental?.co2_saved_tonnes || 0
+  const co2Tonnes25Yr = Number((co2TonnesAnnual * degradationFactor).toFixed(1))
+
+  const treesPlantedAnnual = result.environmental?.equivalent_trees_planted || 0
+  const treesPlanted25Yr = Math.round(treesPlantedAnnual * degradationFactor)
+
+  // 1 passenger car emits ~400g CO2/mile -> 1 Tonne CO2 = 2,500 miles
+  const passengerMilesAnnual = Math.round(co2TonnesAnnual * 2500)
+  const passengerMiles25Yr = Math.round(co2Tonnes25Yr * 2500)
+
   // Coal/gas power plants consume ~2.0 Liters of cooling water per kWh
-  const waterConservedLiters = Math.round(annualGenKwh * 25 * 2.0)
+  const waterConservedLitersAnnual = Math.round(annualGenKwh * 2.0)
+  const waterConservedLiters25Yr = Math.round(lifetimeSolarKwh * 2.0)
+
   // 1 kWh thermal generation = ~0.45 kg coal
-  const coalAvoidedTonnes = ((annualGenKwh * 25 * 0.45) / 1000).toFixed(1)
+  const coalAvoidedTonnesAnnual = ((annualGenKwh * 0.45) / 1000).toFixed(1)
+  const coalAvoidedTonnes25Yr = ((lifetimeSolarKwh * 0.45) / 1000).toFixed(1)
 
   // Save Analysis handler
   const handleSaveAnalysis = async () => {
@@ -316,7 +343,7 @@ export default function ResultsPage() {
                     </p>
                   </div>
                   <p className="text-xs mt-4 pt-3 border-t" style={{ borderColor: 'var(--border-subtle)', color: 'var(--text-muted)' }}>
-                    {totalPanelsCount} panels (400W Mono-PERC)
+                    {totalPanelsCount} panels (400W Mono-PERC • {arrayActualKw} kWp array)
                   </p>
                 </div>
 
@@ -412,7 +439,7 @@ export default function ResultsPage() {
                         {requiredRoofSpaceSqm} m²
                       </span>
                       <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                        Accommodates {totalPanelsCount} panels
+                        Accommodates {totalPanelsCount} panels ({arrayActualKw} kWp array)
                       </p>
                     </div>
 
@@ -485,7 +512,7 @@ export default function ResultsPage() {
                     Your rooftop offers excellent solar geometry with a {paybackPeriod.toFixed(1)}-year payback period.
                   </h3>
                   <p className="text-xs sm:text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                    Over its 25-year operational lifecycle, this {systemSizeKw.toFixed(1)} kWp array will generate approximately {Math.round(annualGenKwh * 25).toLocaleString()} kWh of clean electricity, shielding your property from escalating utility rates and saving an estimated {formatCurrency(netLifetime25YrProfit, currency, locale)} in net cash flow.
+                    Over its 25-year operational lifecycle, this {systemSizeKw.toFixed(1)} kWp array will generate approximately {lifetimeSolarKwh.toLocaleString()} kWh of clean electricity (accounting for 0.5%/yr degradation), shielding your property from escalating utility rates and saving an estimated {formatCurrency(netLifetime25YrProfit, currency, locale)} in net cash flow.
                   </p>
                 </div>
 
@@ -659,7 +686,9 @@ export default function ResultsPage() {
                     </h3>
                   </div>
                   <p className="text-xs sm:text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                    During peak sun months ({peakMonth.month}), daytime production typically exceeds household consumption by ~35–45%. Under net metering regulations, your bidirectional meter automatically credits surplus units to offset winter consumption.
+                    {peakSurplusPercent > 0
+                      ? `During peak sun months (${peakMonth.month}), your estimated solar production (${peakMonth.kWh.toLocaleString()} kWh) exceeds estimated household consumption (~${estMonthlyConsumption.toLocaleString()} kWh) by ~${peakSurplusPercent}%. Under net metering regulations, your bidirectional meter automatically credits surplus units to offset lower winter generation.`
+                      : `During peak sun months (${peakMonth.month}), your system generates ${peakMonth.kWh.toLocaleString()} kWh, offsetting ~${Math.min(100, Math.round((peakMonth.kWh / Math.max(1, estMonthlyConsumption)) * 100))}% of your estimated household consumption (~${estMonthlyConsumption.toLocaleString()} kWh). Under net metering regulations, your bidirectional meter automatically records surplus units to minimize grid bills.`}
                   </p>
                   <div className="p-3.5 rounded-xl text-xs space-y-1" style={{ backgroundColor: 'var(--surface-subtle)', color: 'var(--text-secondary)' }}>
                     <p><strong style={{ color: 'var(--text-primary)' }}>Optimal Inverter Sizing: </strong>DC/AC ratio of 1.15 to 1.25 maximizes morning and late afternoon harvesting without thermal clipping.</p>
@@ -841,13 +870,13 @@ export default function ResultsPage() {
 
                   <div className="p-4 rounded-xl border" style={{ borderColor: 'var(--border-subtle)', backgroundColor: 'var(--surface-subtle)' }}>
                     <span className="text-xs font-bold uppercase tracking-wider block mb-1 text-sky-500">
-                      Year 12: Inverter Buffer
+                      Year 10–12: Inverter Lifecycle
                     </span>
                     <span className="text-lg font-bold font-mono" style={{ color: 'var(--text-primary)' }}>
-                      Mid-Life Service
+                      Mid-Life Service & Warranty
                     </span>
                     <p className="text-xs mt-1 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                      Standard industry buffer for central inverter capacitor maintenance or warranty renewal factored into our cash flow model.
+                      Standard string inverters carry 10–12 year manufacturer warranties. Routine preventative maintenance ensures peak power harvesting across the system's 25-year lifespan.
                     </p>
                   </div>
 
@@ -924,13 +953,18 @@ export default function ResultsPage() {
                       CO₂ Emissions Offset
                     </span>
                     <p className="text-3xl sm:text-4xl font-extrabold tracking-tight font-sans" style={{ color: 'var(--semantic-info)' }}>
-                      {co2Tonnes.toFixed(1)}{' '}
-                      <span className="text-lg font-medium" style={{ color: 'var(--text-secondary)' }}>Tonnes</span>
+                      {co2TonnesAnnual.toFixed(1)}{' '}
+                      <span className="text-lg font-medium" style={{ color: 'var(--text-secondary)' }}>Tonnes / yr</span>
                     </p>
                   </div>
-                  <p className="text-xs mt-4 pt-3 border-t" style={{ borderColor: 'var(--border-subtle)', color: 'var(--text-muted)' }}>
-                    Displaced thermal grid baseline power over 25 years
-                  </p>
+                  <div className="mt-4 pt-3 border-t space-y-1" style={{ borderColor: 'var(--border-subtle)' }}>
+                    <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
+                      25-Year Total: ~{co2Tonnes25Yr} Tonnes
+                    </p>
+                    <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                      Displaced grid emissions factoring in 0.5%/yr degradation
+                    </p>
+                  </div>
                 </div>
 
                 {/* Metric 2: Equivalent Trees Planted */}
@@ -943,13 +977,18 @@ export default function ResultsPage() {
                       Equivalent Trees Planted
                     </span>
                     <p className="text-3xl sm:text-4xl font-extrabold tracking-tight font-sans" style={{ color: 'var(--semantic-success)' }}>
-                      {treesPlanted.toLocaleString()}{' '}
-                      <span className="text-lg font-medium" style={{ color: 'var(--text-secondary)' }}>Trees</span>
+                      {treesPlantedAnnual.toLocaleString()}{' '}
+                      <span className="text-lg font-medium" style={{ color: 'var(--text-secondary)' }}>Trees / yr</span>
                     </p>
                   </div>
-                  <p className="text-xs mt-4 pt-3 border-t" style={{ borderColor: 'var(--border-subtle)', color: 'var(--text-muted)' }}>
-                    Carbon sequestered by mature urban trees over 10 years
-                  </p>
+                  <div className="mt-4 pt-3 border-t space-y-1" style={{ borderColor: 'var(--border-subtle)' }}>
+                    <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
+                      25-Year Total: ~{treesPlanted25Yr.toLocaleString()} Tree-Years
+                    </p>
+                    <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                      Annual absorption equivalent to {treesPlantedAnnual} mature trees
+                    </p>
+                  </div>
                 </div>
 
                 {/* Metric 3: Passenger Vehicle Miles Avoided */}
@@ -962,12 +1001,18 @@ export default function ResultsPage() {
                       Car Miles Offset
                     </span>
                     <p className="text-3xl sm:text-4xl font-extrabold tracking-tight font-sans" style={{ color: 'var(--accent-primary)' }}>
-                      ~{passengerMilesOffset.toLocaleString()}
+                      ~{passengerMilesAnnual.toLocaleString()}{' '}
+                      <span className="text-lg font-medium" style={{ color: 'var(--text-secondary)' }}>Miles / yr</span>
                     </p>
                   </div>
-                  <p className="text-xs mt-4 pt-3 border-t" style={{ borderColor: 'var(--border-subtle)', color: 'var(--text-muted)' }}>
-                    Equivalent gasoline passenger vehicle emissions avoided
-                  </p>
+                  <div className="mt-4 pt-3 border-t space-y-1" style={{ borderColor: 'var(--border-subtle)' }}>
+                    <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
+                      25-Year Total: ~{passengerMiles25Yr.toLocaleString()} Miles
+                    </p>
+                    <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                      Equivalent gasoline passenger vehicle emissions avoided
+                    </p>
+                  </div>
                 </div>
 
                 {/* Metric 4: Thermal Power Cooling Water Saved */}
@@ -980,13 +1025,18 @@ export default function ResultsPage() {
                       Freshwater Conserved
                     </span>
                     <p className="text-3xl sm:text-4xl font-extrabold tracking-tight font-sans" style={{ color: 'var(--text-primary)' }}>
-                      ~{(waterConservedLiters / 1000).toFixed(0)}k{' '}
-                      <span className="text-lg font-medium" style={{ color: 'var(--text-secondary)' }}>Liters</span>
+                      ~{(waterConservedLiters25Yr / 1000).toFixed(0)}k{' '}
+                      <span className="text-lg font-medium" style={{ color: 'var(--text-secondary)' }}>L (25 Yrs)</span>
                     </p>
                   </div>
-                  <p className="text-xs mt-4 pt-3 border-t" style={{ borderColor: 'var(--border-subtle)', color: 'var(--text-muted)' }}>
-                    Thermal plant steam cooling water saved vs coal power
-                  </p>
+                  <div className="mt-4 pt-3 border-t space-y-1" style={{ borderColor: 'var(--border-subtle)' }}>
+                    <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
+                      Annual Rate: ~{(waterConservedLitersAnnual / 1000).toFixed(1)}k Liters / yr
+                    </p>
+                    <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                      Thermal plant steam cooling water saved vs coal power
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -1000,7 +1050,7 @@ export default function ResultsPage() {
                     </h3>
                   </div>
                   <p className="text-xs sm:text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                    By generating clean electricity locally on your rooftop, this system eliminates the combustion of approximately <strong>{coalAvoidedTonnes} metric tonnes of coal</strong> in utility power stations.
+                    By generating clean electricity locally on your rooftop, this system eliminates the combustion of approximately <strong>{coalAvoidedTonnes25Yr} metric tonnes of coal</strong> over 25 years (~{coalAvoidedTonnesAnnual} tonnes/yr) in utility power stations.
                   </p>
                   <div className="p-3.5 rounded-xl text-xs space-y-1.5" style={{ backgroundColor: 'var(--surface-subtle)', color: 'var(--text-secondary)' }}>
                     <p><strong style={{ color: 'var(--text-primary)' }}>Grid Transmission Losses: </strong>Zero transmission dissipation — solar power is consumed directly where it is generated.</p>

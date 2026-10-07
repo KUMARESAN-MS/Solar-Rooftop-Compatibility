@@ -25,6 +25,7 @@ export default function MapPage() {
           latitude: selectedLocation.lat,
           longitude: selectedLocation.lng,
           address: selectedLocation.address,
+          country_code: selectedLocation.country_code || null,
           measuredArea: measuredRoofArea,
         },
       })

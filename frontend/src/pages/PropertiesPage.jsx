@@ -4,6 +4,8 @@ import { FiPlus, FiTrash2, FiMapPin, FiLayers } from 'react-icons/fi'
 import { getProperties, deleteProperty } from '../services/api'
 import Navbar from '../components/Navbar'
 import { SkeletonCard } from '../components/LoadingStates'
+import { formatCurrency } from '../utils/formatCurrency'
+import { detectCountryFromCoordinates, getCurrencyForCountry } from '../utils/currencyMapping'
 
 export default function PropertiesPage() {
   const navigate = useNavigate()
@@ -122,7 +124,15 @@ export default function PropertiesPage() {
                   </div>
                   <div>
                     <span className="block text-[11px]" style={{ color: 'var(--text-muted)' }}>Monthly Bill</span>
-                    <span className="font-semibold font-mono" style={{ color: 'var(--text-primary)' }}>${prop.monthly_bill}</span>
+                    {(() => {
+                      const detectedCountry = detectCountryFromCoordinates(prop.latitude, prop.longitude)
+                      const curr = getCurrencyForCountry(detectedCountry)
+                      return (
+                        <span className="font-semibold font-mono" style={{ color: 'var(--text-primary)' }}>
+                          {formatCurrency(prop.monthly_bill, curr.code, curr.locale)}
+                        </span>
+                      )
+                    })()}
                   </div>
                 </div>
               </div>

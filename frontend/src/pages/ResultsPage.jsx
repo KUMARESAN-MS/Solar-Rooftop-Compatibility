@@ -37,6 +37,7 @@ import WhatIfSimulator from '../components/WhatIfSimulator'
 import RealityCheck from '../components/RealityCheck'
 import { saveProperty, saveAnalysis } from '../services/api'
 import { formatCurrency } from '../utils/formatCurrency'
+import { getCurrencyInfoByCode, getCurrencySymbol } from '../utils/currencyMapping'
 import { useTheme } from '../context/ThemeContext'
 
 const TABS = [
@@ -84,8 +85,10 @@ export default function ResultsPage() {
   }
 
   // Format currency & locale safely
-  const currency = result.financials?.gross_cost?.currency || 'USD'
-  const locale = currency === 'INR' ? 'en-IN' : 'en-US'
+  const currency = result.financials?.gross_cost?.currency || propertyData?.currency || 'USD'
+  const currencyInfo = getCurrencyInfoByCode(currency)
+  const locale = currencyInfo.locale || (currency === 'INR' ? 'en-IN' : 'en-US')
+  const currencySymbol = currencyInfo.symbol || getCurrencySymbol(currency)
 
   const roofAreaSqm = propertyData.roof_area_sqm || 50
   const monthlyBill = propertyData.monthly_bill || 100
@@ -234,7 +237,7 @@ export default function ResultsPage() {
             <p className="text-sm mt-2 max-w-2xl leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
               Coordinates: {propertyData.latitude.toFixed(4)}°, {propertyData.longitude.toFixed(4)}° •{' '}
               <span>{roofAreaSqm} m² roof area</span> •{' '}
-              <span>${monthlyBill}/month current bill</span>
+              <span>{formatCurrency(monthlyBill, currency, locale)}/month current bill</span>
             </p>
           </div>
 
@@ -363,7 +366,7 @@ export default function ResultsPage() {
                     </p>
                   </div>
                   <p className="text-xs mt-4 pt-3 border-t" style={{ borderColor: 'var(--border-subtle)', color: 'var(--text-muted)' }}>
-                    Est. new bill: ${estimatedNewMonthlyBill}/month
+                    Est. new bill: {formatCurrency(estimatedNewMonthlyBill, currency, locale)}/month
                   </p>
                 </div>
               </div>
@@ -717,7 +720,7 @@ export default function ResultsPage() {
                     </p>
                   </div>
                   <p className="text-xs mt-4 pt-3 border-t" style={{ borderColor: 'var(--border-subtle)', color: 'var(--text-muted)' }}>
-                    Total return generated per dollar invested
+                    Total return generated per unit invested
                   </p>
                 </div>
 
@@ -727,7 +730,7 @@ export default function ResultsPage() {
                       Levelized Cost of Solar (LCOE)
                     </span>
                     <p className="text-3xl font-extrabold tracking-tight font-sans" style={{ color: 'var(--text-primary)' }}>
-                      ${levelizedCostOfEnergy}{' '}
+                      {currencySymbol}{levelizedCostOfEnergy}{' '}
                       <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>/kWh</span>
                     </p>
                   </div>
@@ -759,7 +762,7 @@ export default function ResultsPage() {
                       25-Year Cumulative Cash Flow & Break-Even Curve
                     </h2>
                     <p className="text-xs sm:text-sm mt-1 max-w-2xl leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                      Year-by-year net cash position factoring in 0.5%/yr solar panel degradation against your initial net investment. Break-even occurs where the line crosses $0.
+                      Year-by-year net cash position factoring in 0.5%/yr solar panel degradation against your initial net investment. Break-even occurs where the line crosses {formatCurrency(0, currency, locale)}.
                     </p>
                   </div>
                   <div className="text-left sm:text-right shrink-0">
@@ -794,7 +797,7 @@ export default function ResultsPage() {
                       />
                       <Legend verticalAlign="top" height={36} />
                       <Line type="monotone" dataKey="netCashFlow" name="Net Cumulative Return" stroke={successLineColor} strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} />
-                      <Line type="monotone" dataKey="breakEvenLine" name="Break-Even ($0)" stroke={chartTextColor} strokeWidth={1} strokeDasharray="4 4" dot={false} />
+                      <Line type="monotone" dataKey="breakEvenLine" name={`Break-Even (${formatCurrency(0, currency, locale)})`} stroke={chartTextColor} strokeWidth={1} strokeDasharray="4 4" dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>

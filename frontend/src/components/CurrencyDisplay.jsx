@@ -1,5 +1,6 @@
 import React from 'react'
 import { formatCurrency } from '../utils/formatCurrency'
+import { getCurrencySymbol } from '../utils/currencyMapping'
 
 /**
  * CurrencyDisplay
@@ -37,11 +38,10 @@ export default function CurrencyDisplay({
         displayText = fullFormatted
       }
     } else {
+      const symbol = getCurrencySymbol(actualCurrency)
       if (abs >= 1000000) {
-        const symbol = actualCurrency === 'USD' ? '$' : actualCurrency === 'EUR' ? '€' : `${actualCurrency} `
         displayText = `${sign}${symbol}${(abs / 1000000).toFixed(1).replace(/\.0$/, '')}M`
       } else if (abs >= 1000) {
-        const symbol = actualCurrency === 'USD' ? '$' : actualCurrency === 'EUR' ? '€' : `${actualCurrency} `
         displayText = `${sign}${symbol}${(abs / 1000).toFixed(1).replace(/\.0$/, '')}k`
       } else {
         displayText = fullFormatted

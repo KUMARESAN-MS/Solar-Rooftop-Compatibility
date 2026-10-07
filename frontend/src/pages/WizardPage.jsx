@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
@@ -15,6 +15,17 @@ import {
 } from 'react-icons/fi'
 import Navbar from '../components/Navbar'
 import RoofAreaSelector from '../components/RoofAreaSelector'
+import {
+  getCurrencyForCountry,
+  detectCountryCodeFromAddress,
+  detectCountryFromCoordinates,
+  getBillPresetsForCurrency,
+  getSliderRangeForCurrency,
+  getSliderLabelsForCurrency,
+  getDefaultBillForCurrency,
+  getEstimatedTariffForCurrency,
+} from '../utils/currencyMapping'
+import { formatCurrency } from '../utils/formatCurrency'
 
 export default function WizardPage() {
   const navigate = useNavigate()
@@ -31,26 +42,43 @@ export default function WizardPage() {
   const address = hasLocation ? (location.state.address || '') : defaultAddress
   const measuredArea = location.state?.measuredArea || null
 
+  // Determine country code — prefer explicit code from geocoder,
+  // fall back to parsing address string, then coordinates bounding box
+  const countryCode = location.state?.country_code
+    || detectCountryCodeFromAddress(address)
+    || detectCountryFromCoordinates(latitude, longitude)
+    || 'IN' // fallback for default Hyderabad address
+
+  // Derive currency from the country
+  const currencyInfo = useMemo(() => getCurrencyForCountry(countryCode), [countryCode])
+  const currencyCode = currencyInfo.code
+  const currencySymbol = currencyInfo.symbol
+  const currencyLocale = currencyInfo.locale
+
+  // Currency-aware presets and slider config
+  const billPresets = useMemo(() => getBillPresetsForCurrency(currencyCode), [currencyCode])
+  const sliderRange = useMemo(() => getSliderRangeForCurrency(currencyCode), [currencyCode])
+  const sliderLabels = useMemo(() => getSliderLabelsForCurrency(currencyCode, currencySymbol), [currencyCode, currencySymbol])
+  const defaultBill = useMemo(() => getDefaultBillForCurrency(currencyCode), [currencyCode])
+
   const [formData, setFormData] = useState({
     name: address ? address.split(',')[0] || 'My Property' : 'My Property',
     roof_area_sqm: measuredArea || 60,
-    monthly_bill: 100,
+    monthly_bill: defaultBill,
   })
 
-  // Quick bill presets
-  const billPresets = [40, 80, 150, 300, 600, 1200]
+  const handleBillPreset = (val) => {
+    setFormData((prev) => ({ ...prev, monthly_bill: val }))
+  }
 
   // Live calculated preliminary estimations
   const estPanels = Math.max(4, Math.ceil((formData.roof_area_sqm * 0.65) / 2.0))
   const estKw = ((estPanels * 400) / 1000).toFixed(1)
   const estMonthlyGen = Math.round(estKw * 125)
-  const estMonthlySavings = Math.min(formData.monthly_bill, Math.round(estMonthlyGen * 0.12))
+  const estTariff = getEstimatedTariffForCurrency(currencyCode)
+  const estMonthlySavings = Math.min(formData.monthly_bill, Math.round(estMonthlyGen * estTariff))
   const billOffsetPercent = Math.min(100, Math.round((estMonthlySavings / (formData.monthly_bill || 1)) * 100))
   const estFirstYearSavings = Math.round(estMonthlySavings * 12)
-
-  const handleBillPreset = (val) => {
-    setFormData((prev) => ({ ...prev, monthly_bill: val }))
-  }
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -58,6 +86,8 @@ export default function WizardPage() {
       ...formData,
       latitude,
       longitude,
+      country_code: countryCode,
+      currency: currencyCode,
     }
     navigate('/loading', { state: { analysisData } })
   }
@@ -189,7 +219,7 @@ export default function WizardPage() {
                 </div>
                 <div className="flex items-baseline gap-1">
                   <span className="text-2xl font-extrabold font-mono" style={{ color: 'var(--accent-primary)' }}>
-                    ${formData.monthly_bill}
+                    {currencySymbol}{formData.monthly_bill.toLocaleString()}
                   </span>
                   <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>/mo</span>
                 </div>
@@ -220,7 +250,7 @@ export default function WizardPage() {
                           boxShadow: isSelected ? 'var(--shadow-accent)' : 'none',
                         }}
                       >
-                        ${val}
+                        {currencySymbol}{val.toLocaleString()}
                       </button>
                     )
                   })}
@@ -231,19 +261,18 @@ export default function WizardPage() {
               <div className="space-y-2 pt-2">
                 <input
                   type="range"
-                  min="20"
-                  max="1500"
-                  step="10"
+                  min={sliderRange.min}
+                  max={sliderRange.max}
+                  step={sliderRange.step}
                   value={formData.monthly_bill}
                   onChange={(e) => setFormData((prev) => ({ ...prev, monthly_bill: Number(e.target.value) }))}
                   className="w-full"
                 />
 
                 <div className="flex justify-between text-xs font-mono" style={{ color: 'var(--text-muted)' }}>
-                  <span>$20 (Minimal)</span>
-                  <span>$150 (Residential Avg)</span>
-                  <span>$500 (Heavy HVAC)</span>
-                  <span>$1,500+ (Commercial)</span>
+                  {sliderLabels.map((label, i) => (
+                    <span key={i}>{label}</span>
+                  ))}
                 </div>
               </div>
             </section>
@@ -406,12 +435,12 @@ export default function WizardPage() {
                     <div>
                       <span className="text-xs block" style={{ color: 'var(--text-muted)' }}>Est. Year 1 Savings</span>
                       <span className="text-lg font-bold font-mono" style={{ color: 'var(--text-primary)' }}>
-                        ~${estFirstYearSavings.toLocaleString()}
+                        ~{formatCurrency(estFirstYearSavings, currencyCode, currencyLocale)}
                       </span>
                     </div>
                   </div>
                   <span className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>
-                    ~${estMonthlySavings}/mo
+                    ~{formatCurrency(estMonthlySavings, currencyCode, currencyLocale)}/mo
                   </span>
                 </div>
               </div>
@@ -436,4 +465,5 @@ export default function WizardPage() {
     </div>
   )
 }
+
 

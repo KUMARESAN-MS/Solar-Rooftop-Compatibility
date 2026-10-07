@@ -4,6 +4,7 @@ import { FiMapPin, FiSearch, FiNavigation, FiMaximize, FiCheck, FiInfo } from 'r
 import { motion, AnimatePresence } from 'framer-motion'
 import L from 'leaflet'
 import { reverseGeocode, searchLocation } from '../services/api'
+import { detectCountryFromCoordinates, detectCountryCodeFromAddress } from '../utils/currencyMapping'
 
 // Leaflet default icon fix
 import icon from 'leaflet/dist/images/marker-icon.png'
@@ -114,15 +115,20 @@ export default function LocationPicker({
         try {
           const res = await reverseGeocode(position.lat, position.lng)
           const name = res.data?.display_name || `${position.lat.toFixed(4)}, ${position.lng.toFixed(4)}`
+          const countryCode = (res.data?.country_code || '').toUpperCase()
+            || detectCountryCodeFromAddress(name)
+            || detectCountryFromCoordinates(position.lat, position.lng)
+            || null
           setAddress(name)
           if (onPositionSelect) {
-            onPositionSelect({ lat: position.lat, lng: position.lng, address: name })
+            onPositionSelect({ lat: position.lat, lng: position.lng, address: name, country_code: countryCode })
           }
         } catch (error) {
           const fallback = `${position.lat.toFixed(4)}, ${position.lng.toFixed(4)}`
+          const fallbackCountry = detectCountryFromCoordinates(position.lat, position.lng)
           setAddress(fallback)
           if (onPositionSelect) {
-            onPositionSelect({ lat: position.lat, lng: position.lng, address: fallback })
+            onPositionSelect({ lat: position.lat, lng: position.lng, address: fallback, country_code: fallbackCountry })
           }
         } finally {
           setIsReverseGeocoding(false)
@@ -136,12 +142,15 @@ export default function LocationPicker({
     const lat = parseFloat(res.lat)
     const lng = parseFloat(res.lon)
     const newPos = { lat, lng }
+    const countryCode = detectCountryCodeFromAddress(res.display_name)
+      || detectCountryFromCoordinates(lat, lng)
+      || null
     setPosition(newPos)
     setAddress(res.display_name)
     setShowDropdown(false)
     setSearchQuery('')
     if (onPositionSelect) {
-      onPositionSelect({ lat, lng, address: res.display_name })
+      onPositionSelect({ lat, lng, address: res.display_name, country_code: countryCode })
     }
   }
 

@@ -12,7 +12,7 @@ from app.database import create_tables
 # --- App Initialization ---
 app = FastAPI(
     title="Solar Rooftop Prediction API",
-    description="AI-powered solar rooftop potential prediction and energy optimization",
+    description="Physics-based solar rooftop potential estimation and energy optimization",
     version="0.1.0",
 )
 

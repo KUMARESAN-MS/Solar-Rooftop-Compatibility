@@ -12,7 +12,6 @@ DB_PATH = BASE_DIR / "solar.db"
 REFERENCE_DATA_PATH = BASE_DIR / "data" / "reference_data.json"
 CURRENCIES_PATH = BASE_DIR / "data" / "currencies.json"
 COUNTRIES_DATA_DIR = BASE_DIR / "data" / "countries"
-ML_MODEL_PATH = BASE_DIR / "app" / "ml" / "model.joblib"
 
 # --- Database ---
 DATABASE_URL = f"sqlite:///{DB_PATH}"

@@ -23,15 +23,14 @@ build/
 .DS_Store
 Thumbs.db
 
-# ML artifacts (large files)
+# Binary artifacts
 *.joblib
-!backend/app/ml/model.joblib
-!backend/app/ml/scaler.joblib
-!backend/app/ml/model_metadata.joblib
 
 # Logs
 *.log
 
-# Markdown files
+# Markdown files (exclude all markdown files except README)
 *.md
+**/*.md
 !README.md
+!**/README.md
